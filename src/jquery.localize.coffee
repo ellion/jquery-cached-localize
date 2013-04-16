@@ -21,6 +21,7 @@ $.localize = (pkg, options = {}) ->
   wrappedSet           = this
   intermediateLangData = {}
   fileExtension        = options.fileExtension || "json"
+  useCache             = options.useCache || false
 
   loadLanguage = (pkg, lang, level = 1) ->
     switch level
@@ -43,6 +44,7 @@ $.localize = (pkg, options = {}) ->
   jsonCall = (file, pkg, lang, level) ->
     file = "#{options.pathPrefix}/#{file}" if options.pathPrefix?
     successFunc = (d) ->
+      $.localize.cache[pkg] = d
       $.extend(intermediateLangData, d)
       notifyDelegateLanguageLoaded(intermediateLangData)
       loadLanguage(pkg, lang, level + 1)
@@ -122,9 +124,11 @@ $.localize = (pkg, options = {}) ->
       string_or_regex_or_array
 
   lang = normaliseLang(if options.language then options.language else $.defaultLanguage)
-  loadLanguage(pkg, lang, 1) unless (options.skipLanguage && lang.match(regexify(options.skipLanguage)))
+  loadLanguage(pkg, lang, 1) unless (options.skipLanguage && lang.match(regexify(options.skipLanguage))) || (useCache && $.localize.cache[pkg]?)
+  defaultCallback($.localize.cache[pkg]) if useCache && $.localize.cache[pkg]
 
   wrappedSet
 
 $.fn.localize = $.localize
 $.localize.data = {}
+$.localize.cache = {}
